@@ -6,4 +6,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: make say-hello
+      - uses: actions/setup-node@v4
+      - run: npm install
+      - run: npm run lint
