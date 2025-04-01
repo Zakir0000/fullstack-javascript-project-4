@@ -1,17 +1,7 @@
 #!/usr/bin/env node
 
 import { program } from 'commander';
-import axios from 'axios';
-import fs from 'fs-extra';
-import path from 'path';
-import downloadPage from './utilities/downLoadPage';
-
-const generateFileName = (url) => {
-  const urlObj = new URL(url);
-  const host = urlObj.hostname.replace(/\W/g, '-');
-  const pathname = urlObj.pathname === '/' ? '' : urlObj.pathname.replace(/\W/g, '-');
-  return `${host}${pathname}.html`;
-};
+import downloadPage from './utilities/downLoadPage.js';
 
 program
   .name('page-loader')
