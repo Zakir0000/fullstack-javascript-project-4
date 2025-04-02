@@ -2,6 +2,9 @@
 
 import { program } from 'commander';
 import downloadPage from './utilities/downLoadPage.js';
+import debug from 'debug';
+
+const log = debug('hexlet:page-loader');
 
 program
   .name('page-loader')
@@ -10,10 +13,8 @@ program
   .argument('<url>', 'URL страницы для загрузки')
   .option('-o, --output <dir>', 'Output directory', process.cwd())
   .action((url, options) => {
+    log(`Running page-loader for ${url} with output directory: ${options.output}`);
     downloadPage(url, options.output);
   });
 
-  program.parse();
-
-
-export default downloadPage;
+program.parse();
