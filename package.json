@@ -5,7 +5,7 @@
     "page-loader": "./page-loader.js"
   },
   "description": "[![Actions Status](https://github.com/Zakir0000/fullstack-javascript-project-4/actions/workflows/hexlet-check.yml/badge.svg)](https://github.com/Zakir0000/fullstack-javascript-project-4/actions)",
-  "main": "index.js",
+  "main": "./page-loader.js",
   "type": "module",
   "scripts": {
     "lint": "eslint .",
@@ -23,6 +23,7 @@
   "homepage": "https://github.com/Zakir0000/fullstack-javascript-project-4#readme",
   "devDependencies": {
     "eslint": "^9.23.0",
+    "eslint-plugin-vitest": "^0.5.4",
     "fs-extra": "^11.3.0",
     "jest": "^29.7.0",
     "nock": "^14.0.2",
