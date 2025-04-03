@@ -17,4 +17,6 @@ program
     downloadPage(url, options.output);
   });
 
+
+program.exitOverride();  
 program.parse();
