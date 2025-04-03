@@ -4,7 +4,7 @@ import { program } from 'commander';
 import downloadPage from './utilities/downLoadPage.js';
 import debug from 'debug';
 
-const log = debug('hexlet:page-loader');
+const log = debug('page-loader');
 
 program
   .name('page-loader')
@@ -17,7 +17,8 @@ program
     return downloadPage(url, options.output);
   });
 
-
 program.exitOverride();
 
-program.parse();
+program.parseAsync().catch(err => {
+  throw err;
+});
