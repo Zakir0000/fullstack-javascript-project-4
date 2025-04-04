@@ -12,7 +12,7 @@ async function run() {
     return program
       .name('page-loader')
       .description('Page loader utility')
-      .version('1.0.0')
+      .version('1.0.0', '-v, --version')
       .argument('<url>', 'URL страницы для загрузки')
       .option('-o, --output <dir>', 'Output directory', process.cwd())
       .action(async (url, options) => {
@@ -22,6 +22,7 @@ async function run() {
       .parseAsync();
   } catch (error) {
     console.error('An error occurred:', error.message);
+    process.exitCode = 1;
     throw error;
   }
 }
