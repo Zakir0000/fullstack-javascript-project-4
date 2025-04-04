@@ -19,12 +19,8 @@ const downloadResource = (url, filePath) => {
   return axios
     .get(url, { responseType: 'arraybuffer' })
     .then((response) => fs.writeFile(filePath, response.data))
-    .then(() => {
-      log(`Downloaded: ${url}`);
-    })
-    .catch((err) =>
-      Promise.reject(new Error(`Failed to download ${url}: ${err.message}`))
-    );
+    .then(() => log(`Downloaded: ${url}`))
+    .catch((err) => Promise.reject(new Error(`Failed to download ${url}: ${err.message}`)));
 };
 
 const downloadPage = (pageUrl, outputDir = process.cwd()) => {
@@ -49,29 +45,29 @@ const downloadPage = (pageUrl, outputDir = process.cwd()) => {
       const $ = cheerio.load(html);
       const tasks = new Listr([], { concurrent: true });
 
-      $('img, link[rel="stylesheet"], script[src]').each((_, element) => {
-        const tag = element.tagName;
-        const attr = tag === 'link' ? 'href' : 'src';
-        const resourceUrl = new URL($(element).attr(attr), pageUrl).href;
-        const resourceName = generateFileName(resourceUrl) + path.extname(resourceUrl);
-        const resourcePath = path.join(resourcesPath, resourceName);
+      return fs.readdir(resourcesPath).catch(() => []).then(() => {
+        $('img, link[rel="stylesheet"], script[src]').each((_, element) => {
+          const tag = element.tagName;
+          const attr = tag === 'link' ? 'href' : 'src';
+          const resourceUrl = new URL($(element).attr(attr), pageUrl).href;
+          const resourceName = generateFileName(resourceUrl) + path.extname(resourceUrl);
+          const resourcePath = path.join(resourcesPath, resourceName);
 
-        $(element).attr(attr, path.join(resourcesDir, resourceName));
+          $(element).attr(attr, path.join(resourcesDir, resourceName));
 
-        tasks.add({
-          title: resourceUrl,
-          task: () => downloadResource(resourceUrl, resourcePath),
+          tasks.add({
+            title: resourceUrl,
+            task: () => downloadResource(resourceUrl, resourcePath),
+          });
         });
-      });
 
-      return tasks.run().then(() => $);
+        return tasks.run().then(() => $);
+      });
     })
-    .then(($) =>
-      fs.writeFile(htmlFilePath, $.html()).then(() => htmlFilePath)
-    )
-    .then((filePath) => {
-      console.log(`\nPage was successfully downloaded into '${chalk.bold(filePath)}'`);
-      return filePath;
+    .then(($) => fs.writeFile(htmlFilePath, $.html()))
+    .then(() => {
+      console.log(`\nPage was successfully downloaded into '${chalk.bold(htmlFilePath)}'`);
+      return htmlFilePath;
     })
     .catch((err) => {
       log(`Error downloading page: ${err.message}`);
