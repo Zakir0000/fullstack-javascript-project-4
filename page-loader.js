@@ -7,7 +7,7 @@ import debug from 'debug';
 const log = debug('hexlet:page-loader');
 
 // Main function to run the program
-async function run() {
+async function run(url) {
   const program = new Command();
   try {
     return program
@@ -16,7 +16,7 @@ async function run() {
       .version('1.0.0', '-v, --version')
       .argument('<url>', 'URL страницы для загрузки')
       .option('-o, --output <dir>', 'Output directory', process.cwd())
-      .action(async (url, options) => {
+      .action(async (options) => {
         log(`Running page-loader for ${url} with output directory: ${options.output}`);
         await downloadPage(url, options.output);
       })
