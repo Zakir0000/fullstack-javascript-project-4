@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { program } from 'commander';
+import { Command } from 'commander';
 import downloadPage from './utilities/downLoadPage.js';
 import debug from 'debug';
 
@@ -8,6 +8,7 @@ const log = debug('hexlet:page-loader');
 
 // Main function to run the program
 async function run() {
+  const program = new Command();
   try {
     return program
       .name('page-loader')
@@ -17,7 +18,7 @@ async function run() {
       .option('-o, --output <dir>', 'Output directory', process.cwd())
       .action(async (url, options) => {
         log(`Running page-loader for ${url} with output directory: ${options.output}`);
-        await downloadPage(url, options.output); // Assuming downloadPage is async
+        await downloadPage(url, options.output);
       })
       .parseAsync();
   } catch (error) {
