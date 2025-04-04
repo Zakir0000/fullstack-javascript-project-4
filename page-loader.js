@@ -9,7 +9,7 @@ const log = debug('hexlet:page-loader');
 // Main function to run the program
 async function run() {
   try {
-    program
+    return program
       .name('page-loader')
       .description('Page loader utility')
       .version('1.0.0')
@@ -18,14 +18,12 @@ async function run() {
       .action(async (url, options) => {
         log(`Running page-loader for ${url} with output directory: ${options.output}`);
         await downloadPage(url, options.output); // Assuming downloadPage is async
-      });
-
-    program.parse();
+      })
+      .parseAsync();
   } catch (error) {
     console.error('An error occurred:', error.message);
-    process.exit(1); // Exit with a non-zero status code in case of an error
+    throw error;
   }
 }
 
-// Call the main function
-run();
+export default run;
