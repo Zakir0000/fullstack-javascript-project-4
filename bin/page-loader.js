@@ -32,4 +32,4 @@ function run() {
     });
 }
 
-export default run;
+run();
