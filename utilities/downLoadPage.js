@@ -9,11 +9,13 @@ import { Listr } from 'listr2';
 const log = debug('hexlet:page-loader');
 
 export const generateFileName = (url) => {
-  const urlObj = new URL(url);
-  const host = urlObj.hostname.replace(/\W/g, '-');
-  const pathname = urlObj.pathname.replace(/\W/g, '-').replace(/-$/, '');
-  return `${host}${pathname || ''}`;
+  const { hostname, pathname } = new URL(url);
+  const pathWithoutExt = pathname.replace(path.extname(pathname), '');
+  const host = hostname.replace(/\W/g, '-');
+  const cleanPath = pathWithoutExt.replace(/\W/g, '-').replace(/-$/, '');
+  return `${host}${cleanPath || ''}`;
 };
+
 
 const downloadResource = (url, filePath) => {
   return axios.get(url, {
