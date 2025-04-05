@@ -2,7 +2,7 @@
   "name": "@hexlet/code",
   "version": "1.0.0",
   "bin": {
-    "page-loader": "./page-loader.js"
+    "page-loader": "./bin/page-loader.js"
   },
   "description": "[![Actions Status](https://github.com/Zakir0000/fullstack-javascript-project-4/actions/workflows/hexlet-check.yml/badge.svg)](https://github.com/Zakir0000/fullstack-javascript-project-4/actions)",
   "main": "./page-loader.js",

@@ -1,5 +1,7 @@
+#!/usr/bin/env node
+
 import { Command } from 'commander';
-import downloadPage from './utilities/downLoadPage.js';
+import downloadPage from '../utilities/downLoadPage.js';
 import debug from 'debug';
 import chalk from 'chalk';
 
