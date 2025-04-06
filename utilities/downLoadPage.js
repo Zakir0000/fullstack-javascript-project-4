@@ -16,7 +16,6 @@ export const generateFileName = (url) => {
   return `${host}${cleanPath || ''}`;
 };
 
-
 const downloadResource = (url, filePath) => {
   return axios.get(url, {
     responseType: 'arraybuffer',
@@ -63,15 +62,22 @@ const downloadPage = (pageUrl, outputDir = process.cwd()) => {
     $('img, link[rel="stylesheet"], script[src]').each((_, element) => {
       const tag = element.tagName;
       const attr = tag === 'link' ? 'href' : 'src';
-      const resourceUrl = new URL($(element).attr(attr), pageUrl).href;
-      const resourceName = generateFileName(resourceUrl) + path.extname(resourceUrl);
+      const resourceAttr = $(element).attr(attr);
+      const resourceUrl = new URL(resourceAttr, pageUrl);
+
+      const pageHost = new URL(pageUrl).hostname;
+      if (resourceUrl.hostname !== pageHost) {
+        return;
+      }
+
+      const resourceName = generateFileName(resourceUrl.href) + path.extname(resourceUrl.pathname);
       const resourcePath = path.join(resourcesPath, resourceName);
 
       $(element).attr(attr, path.join(resourcesDir, resourceName));
 
       tasks.add({
-        title: resourceUrl,
-        task: () => downloadResource(resourceUrl, resourcePath)
+        title: resourceUrl.href,
+        task: () => downloadResource(resourceUrl.href, resourcePath)
           .catch(err => {
             log(err.message);
             throw err;
@@ -83,7 +89,7 @@ const downloadPage = (pageUrl, outputDir = process.cwd()) => {
   }).then(($) => {
     return fs.writeFile(htmlFilePath, $.html());
   }).then(() => {
-    console.log(`\nPage was successfully downloaded into '${chalk.bold(htmlFilePath)}'`);
+    console.log(`\nPage was downloaded as '${chalk.bold.redBright(htmlFileName)}'`);
     return htmlFilePath;
   }).catch((error) => {
     log(`Error downloading page: ${error.message}`);
