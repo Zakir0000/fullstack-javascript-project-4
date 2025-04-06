@@ -10,10 +10,21 @@ const log = debug('hexlet:page-loader');
 
 export const generateFileName = (url) => {
   const { hostname, pathname } = new URL(url);
-  const pathWithoutExt = pathname.replace(path.extname(pathname), '');
-  const host = hostname.replace(/\W/g, '-');
-  const cleanPath = pathWithoutExt.replace(/\W/g, '-').replace(/-$/, '');
-  return `${host}${cleanPath || ''}`;
+  const fileName = path.basename(pathname);
+  const ext = path.extname(pathname);
+
+  if (!pathname || pathname === '/' || !fileName) {
+    return hostname.replace(/\W/g, '-');
+  }
+  
+  const pathWithoutExt = pathname.replace(ext, '');
+  const cleanPath = pathWithoutExt
+    .split('/')
+    .map(part => part.replace(/\W/g, '-'))
+    .filter(Boolean)
+    .join('-');
+  
+  return `${hostname.replace(/\W/g, '-')}-${cleanPath}`;
 };
 
 const downloadResource = (url, filePath) => {
@@ -31,81 +42,88 @@ const downloadResource = (url, filePath) => {
     });
 };
 
-const downloadPage = async (pageUrl, outputDir = process.cwd()) => {
-  try {
-    const stats = await fs.stat(outputDir);
-    if (!stats.isDirectory()) {
-      throw new Error('Output path is not a directory');
-    }
-
-    const baseName = generateFileName(pageUrl);
-    const htmlFileName = `${baseName}.html`;
-    const resourcesDir = `${baseName}_files`;
-    const htmlFilePath = path.join(outputDir, htmlFileName);
-    const resourcesPath = path.join(outputDir, resourcesDir);
-
-    const response = await axios.get(pageUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0',
-      },
-      validateStatus: (status) => status < 400,
-    });
-
-    log(`Received response from ${pageUrl}`);
-    await fs.mkdir(resourcesPath, { recursive: true });
-
-    const $ = cheerio.load(response.data);
-    const tasks = new Listr([], {
-      concurrent: true,
-      exitOnError: false,
-    });
-
-    const pageHost = new URL(pageUrl).hostname;
-
-    $('img, link[rel="stylesheet"], script[src]').each((_, element) => {
-      const tagName = $(element)[0].tagName;
-      const attr = tagName === 'link' ? 'href' : 'src';
-      const resourceAttr = $(element).attr(attr);
-
-      if (!resourceAttr) return;
-
-      let resourceUrl;
-      try {
-        resourceUrl = new URL(resourceAttr, pageUrl);
-      } catch {
-        log(`Skipping invalid URL: ${resourceAttr}`);
-        return;
+const downloadPage = (pageUrl, outputDir = process.cwd()) => {
+  return fs.stat(outputDir)
+    .then((stats) => {
+      if (!stats.isDirectory()) {
+        throw new Error('Output path is not a directory');
       }
 
-      if (resourceUrl.hostname !== pageHost) {
-        return; // skip external resources
-      }
+      const baseName = generateFileName(pageUrl);
+      const htmlFileName = `${baseName}.html`;
+      const resourcesDir = `${baseName}_files`;
+      const htmlFilePath = path.join(outputDir, htmlFileName);
+      const resourcesPath = path.join(outputDir, resourcesDir);
 
-      const resourceName = generateFileName(resourceUrl.href) + path.extname(resourceUrl.pathname);
-      const resourcePath = path.join(resourcesPath, resourceName);
+      return axios.get(pageUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        },
+        validateStatus: (status) => status < 400
+      })
+        .then((response) => {
+          log(`Received response from ${pageUrl}`);
+          return fs.mkdir(resourcesPath, { recursive: true })
+            .then(() => response.data);
+        })
+        .then((html) => {
+          const $ = cheerio.load(html);
+          const tasks = new Listr([], { 
+            concurrent: true,
+            exitOnError: false,
+          });
 
-      $(element).attr(attr, path.posix.join(resourcesDir, resourceName));
+          $('img, link[rel="stylesheet"], script[src]').each((_, element) => {
+            const tag = element.tagName;
+            const attr = tag === 'link' ? 'href' : 'src';
+            const resourceAttr = $(element).attr(attr);
+            if (!resourceAttr) return;
 
-      tasks.add({
-        title: `Downloading ${resourceUrl.href}`,
-        task: () => downloadResource(resourceUrl.href, resourcePath)
-          .catch((err) => {
-            log(err.message);
-            throw err;
-          }),
-      });
+            let resourceUrl;
+            try {
+              resourceUrl = new URL(resourceAttr, pageUrl);
+            } catch (err) {
+              log(`Invalid URL skipped: ${resourceAttr}`);
+              return;
+            }
+
+            const pageHost = new URL(pageUrl).hostname;
+            if (resourceUrl.hostname !== pageHost) {
+              return;
+            }
+
+            const ext = path.extname(resourceUrl.pathname) || '.html';
+            const originalFileName = path.basename(resourceUrl.pathname);
+            const resourceName = originalFileName 
+              ? `${generateFileName(resourceUrl.href)}${ext}`
+              : `${generateFileName(resourceUrl.href)}`;
+            const resourcePath = path.join(resourcesPath, resourceName);
+
+            $(element).attr(attr, path.join(resourcesDir, resourceName));
+
+            tasks.add({
+              title: `Downloading ${resourceUrl.href}`,
+              task: () => downloadResource(resourceUrl.href, resourcePath)
+                .catch(err => {
+                  log(err.message);
+                  throw err;
+                })
+            });
+          });
+
+          return tasks.run().then(() => $);
+        })
+        .then(($) => fs.writeFile(htmlFilePath, $.html()).then(() => htmlFilePath))
+        .then((htmlFilePath) => {
+          console.log(`\nPage was successfully downloaded into '${chalk.bold.redBright(htmlFilePath)}'`);
+          return htmlFilePath;
+        });
+    })
+    .catch((error) => {
+      log(`Error downloading page: ${error.message}`);
+      console.error(chalk.red(`Error: ${error.message}`));
+      throw error;
     });
-
-    await tasks.run();
-    await fs.writeFile(htmlFilePath, $.html());
-
-    console.log(`\nPage was successfully downloaded into '${chalk.bold.redBright(htmlFilePath)}'`);
-    return htmlFilePath;
-  } catch (error) {
-    log(`Error downloading page: ${error.message}`);
-    console.error(chalk.red(`Error: ${error.message}`));
-    throw error;
-  }
 };
 
 export default downloadPage;
