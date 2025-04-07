@@ -100,8 +100,11 @@ const downloadPage = (pageUrl, outputDir = process.cwd()) => {
               : `${generateFileName(resourceUrl.href)}`;
             const resourcePath = path.join(resourcesPath, resourceName);
 
-            // Use POSIX join to force forward slashes for HTML paths.
-            $(element).attr(attr, path.posix.join(resourcesDir, resourceName));
+            // Rewrite the URL to match the local file path
+            const localResourcePath = path.posix.join(resourcesDir, resourceName); // Ensure / is used
+
+            // Update the attribute with the local resource path
+            $(element).attr(attr, localResourcePath);
 
             tasks.add({
               title: `Downloading ${resourceUrl.href}`,
@@ -114,21 +117,11 @@ const downloadPage = (pageUrl, outputDir = process.cwd()) => {
           });
 
           // Save the HTML file also in the resources folder.
-          const htmlInResourcesPath = path.join(resourcesPath, htmlFileName);
-          return fs.writeFile(htmlInResourcesPath, $.html(), { ocd: true })
+          const htmlInResourcesPath = path.posix.join(resourcesPath, htmlFileName); // Ensure / is used
+          return fs.writeFile(htmlInResourcesPath, $.html(), { encoding: 'utf8' })
             .then(() => tasks.run().then(() => $));
         })
-        .then(($) => {
-          const prettyHtml = beautify.html($.html(), {
-            indent_size: 2,
-            preserve_newlines: true,
-            end_with_newline: true,
-            unformatted: [],
-          });
-
-          return fs.writeFile(htmlFilePath, prettyHtml, { ocd: true })
-            .then(() => htmlFilePath);
-        })
+        .then(($) => fs.writeFile(htmlFilePath, $.html(), { encoding: 'utf8' }).then(() => htmlFilePath))
         .then((htmlFilePath) => {
           console.log(`\nPage was successfully downloaded into '${chalk.bold.redBright(htmlFilePath)}'`);
           return htmlFilePath;
@@ -140,5 +133,6 @@ const downloadPage = (pageUrl, outputDir = process.cwd()) => {
       throw error;
     });
 };
+
 
 export default downloadPage;
