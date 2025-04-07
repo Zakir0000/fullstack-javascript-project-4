@@ -92,9 +92,11 @@ const downloadPage = (pageUrl, outputDir = process.cwd()) => {
               return;
             }
 
-            // Use the hostname and original resource path for naming
-            const { hostname, pathname } = resourceUrl;
-            const resourceName = `${hostname.replace(/\W/g, '-')}${pathname.replace(/\//g, '-')}`;
+            const ext = path.extname(resourceUrl.pathname) || '.html';
+            const originalFileName = path.basename(resourceUrl.pathname);
+            const resourceName = originalFileName 
+              ? `${generateFileName(resourceUrl.href)}${ext}`
+              : `${generateFileName(resourceUrl.href)}`;
             const resourcePath = path.join(resourcesPath, resourceName);
 
             $(element).attr(attr, path.join(resourcesDir, resourceName));
@@ -108,6 +110,9 @@ const downloadPage = (pageUrl, outputDir = process.cwd()) => {
                 })
             });
           });
+
+          const htmlInResourcesPath = path.join(resourcesPath, htmlFileName);
+          fs.writeFile(htmlInResourcesPath, $.html()).then(() => htmlInResourcesPath);
 
           return tasks.run().then(() => $);
         })
