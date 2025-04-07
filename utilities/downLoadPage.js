@@ -5,6 +5,7 @@ import * as cheerio from 'cheerio';
 import debug from 'debug';
 import chalk from 'chalk';
 import { Listr } from 'listr2';
+import pretty from 'pretty';
 
 const log = debug('hexlet:page-loader');
 
@@ -99,7 +100,8 @@ const downloadPage = (pageUrl, outputDir = process.cwd()) => {
               : `${generateFileName(resourceUrl.href)}`;
             const resourcePath = path.join(resourcesPath, resourceName);
 
-            $(element).attr(attr, path.join(resourcesDir, resourceName));
+            // Use POSIX join to force forward slashes for HTML paths.
+            $(element).attr(attr, path.posix.join(resourcesDir, resourceName));
 
             tasks.add({
               title: `Downloading ${resourceUrl.href}`,
@@ -111,12 +113,12 @@ const downloadPage = (pageUrl, outputDir = process.cwd()) => {
             });
           });
 
+          // Save the HTML file also in the resources folder.
           const htmlInResourcesPath = path.join(resourcesPath, htmlFileName);
-          fs.writeFile(htmlInResourcesPath, $.html()).then(() => htmlInResourcesPath);
-
-          return tasks.run().then(() => $);
+          return fs.writeFile(htmlInResourcesPath, pretty($.html(), {ocd: true}))
+            .then(() => tasks.run().then(() => $));
         })
-        .then(($) => fs.writeFile(htmlFilePath, $.html()).then(() => htmlFilePath))
+        .then(($) => fs.writeFile(htmlFilePath, pretty($.html(), {ocd: true})).then(() => htmlFilePath))
         .then((htmlFilePath) => {
           console.log(`\nPage was successfully downloaded into '${chalk.bold.redBright(htmlFilePath)}'`);
           return htmlFilePath;
