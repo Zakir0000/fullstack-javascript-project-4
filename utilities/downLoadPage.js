@@ -92,11 +92,9 @@ const downloadPage = (pageUrl, outputDir = process.cwd()) => {
               return;
             }
 
-            const ext = path.extname(resourceUrl.pathname) || '.html';
-            const originalFileName = path.basename(resourceUrl.pathname);
-            const resourceName = originalFileName 
-              ? `${generateFileName(resourceUrl.href)}${ext}`
-              : `${generateFileName(resourceUrl.href)}`;
+            // Use the hostname and original resource path for naming
+            const { hostname, pathname } = resourceUrl;
+            const resourceName = `${hostname.replace(/\W/g, '-')}${pathname.replace(/\//g, '-')}`;
             const resourcePath = path.join(resourcesPath, resourceName);
 
             $(element).attr(attr, path.join(resourcesDir, resourceName));
