@@ -5,7 +5,7 @@ import * as cheerio from 'cheerio';
 import debug from 'debug';
 import chalk from 'chalk';
 import { Listr } from 'listr2';
-import pretty from 'pretty';
+import beautify from 'js-beautify';
 
 const log = debug('hexlet:page-loader');
 
@@ -115,10 +115,20 @@ const downloadPage = (pageUrl, outputDir = process.cwd()) => {
 
           // Save the HTML file also in the resources folder.
           const htmlInResourcesPath = path.join(resourcesPath, htmlFileName);
-          return fs.writeFile(htmlInResourcesPath, pretty($.html(), {ocd: true}))
+          return fs.writeFile(htmlInResourcesPath, $.html(), { ocd: true })
             .then(() => tasks.run().then(() => $));
         })
-        .then(($) => fs.writeFile(htmlFilePath, pretty($.html(), {ocd: true})).then(() => htmlFilePath))
+        .then(($) => {
+          const prettyHtml = beautify.html($.html(), {
+            indent_size: 2,
+            preserve_newlines: true,
+            end_with_newline: true,
+            unformatted: [],
+          });
+
+          return fs.writeFile(htmlFilePath, prettyHtml, { ocd: true })
+            .then(() => htmlFilePath);
+        })
         .then((htmlFilePath) => {
           console.log(`\nPage was successfully downloaded into '${chalk.bold.redBright(htmlFilePath)}'`);
           return htmlFilePath;
