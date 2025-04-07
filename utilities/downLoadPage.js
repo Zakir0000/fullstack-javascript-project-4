@@ -5,7 +5,7 @@ import * as cheerio from 'cheerio';
 import debug from 'debug';
 import chalk from 'chalk';
 import { Listr } from 'listr2';
-import beautify from 'js-beautify';
+import pretty from 'pretty';
 
 const log = debug('hexlet:page-loader');
 
@@ -100,11 +100,7 @@ const downloadPage = (pageUrl, outputDir = process.cwd()) => {
               : `${generateFileName(resourceUrl.href)}`;
             const resourcePath = path.join(resourcesPath, resourceName);
 
-            // Rewrite the URL to match the local file path
-            const localResourcePath = path.posix.join(resourcesDir, resourceName); // Ensure / is used
-
-            // Update the attribute with the local resource path
-            $(element).attr(attr, localResourcePath);
+            $(element).attr(attr, path.join(resourcesPath, resourceName));
 
             tasks.add({
               title: `Downloading ${resourceUrl.href}`,
@@ -117,11 +113,11 @@ const downloadPage = (pageUrl, outputDir = process.cwd()) => {
           });
 
           // Save the HTML file also in the resources folder.
-          const htmlInResourcesPath = path.posix.join(resourcesPath, htmlFileName); // Ensure / is used
-          return fs.writeFile(htmlInResourcesPath, $.html(), { encoding: 'utf8' })
+          const htmlInResourcesPath = path.join(resourcesPath, htmlFileName);
+          return fs.writeFile(htmlInResourcesPath, pretty($.html(), {ocd: true}))
             .then(() => tasks.run().then(() => $));
         })
-        .then(($) => fs.writeFile(htmlFilePath, $.html(), { encoding: 'utf8' }).then(() => htmlFilePath))
+        .then(($) => fs.writeFile(htmlFilePath, pretty($.html(), {ocd: true})).then(() => htmlFilePath))
         .then((htmlFilePath) => {
           console.log(`\nPage was successfully downloaded into '${chalk.bold.redBright(htmlFilePath)}'`);
           return htmlFilePath;
@@ -133,6 +129,5 @@ const downloadPage = (pageUrl, outputDir = process.cwd()) => {
       throw error;
     });
 };
-
 
 export default downloadPage;
