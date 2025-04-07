@@ -55,6 +55,7 @@ const downloadPage = (pageUrl, outputDir = process.cwd()) => {
       const resourcesDir = `${baseName}_files`;
       const htmlFilePath = path.join(outputDir, htmlFileName);
       const resourcesPath = path.join(outputDir, resourcesDir);
+      const pageUrlObj = new URL(pageUrl);
 
       return axios.get(pageUrl, {
         headers: {
@@ -74,9 +75,10 @@ const downloadPage = (pageUrl, outputDir = process.cwd()) => {
             exitOnError: false,
           });
 
-          $('img, link[rel="stylesheet"], script[src]').each((_, element) => {
-            const tag = element.tagName;
-            const attr = tag === 'link' ? 'href' : 'src';
+          // Handle all resource types
+          $('img[src], link[rel="stylesheet"][href], script[src], link[rel="canonical"][href]').each((_, element) => {
+            const tagName = element.tagName.toLowerCase();
+            const attr = (tagName === 'link') ? 'href' : 'src';
             const resourceAttr = $(element).attr(attr);
             if (!resourceAttr) return;
 
@@ -88,19 +90,21 @@ const downloadPage = (pageUrl, outputDir = process.cwd()) => {
               return;
             }
 
-            const pageHost = new URL(pageUrl).hostname;
-            if (resourceUrl.hostname !== pageHost) {
+            // Check if resource is on the same domain (including subdomains)
+            const isSameDomain = resourceUrl.hostname === pageUrlObj.hostname || 
+              resourceUrl.hostname.endsWith(`.${pageUrlObj.hostname}`);
+
+            if (!isSameDomain) {
               return;
             }
 
-            const ext = path.extname(resourceUrl.pathname) || '.html';
-            const originalFileName = path.basename(resourceUrl.pathname);
-            const resourceName = originalFileName 
-              ? `${generateFileName(resourceUrl.href)}${ext}`
-              : `${generateFileName(resourceUrl.href)}`;
+            const ext = path.extname(resourceUrl.pathname) || 
+              (tagName === 'link' && $(element).attr('rel') === 'canonical' ? '.html' : '');
+            const resourceName = `${generateFileName(resourceUrl.href)}${ext}`;
             const resourcePath = path.join(resourcesPath, resourceName);
+            const relativePath = path.posix.join(resourcesDir, resourceName);
 
-            $(element).attr(attr, path.join(resourcesPath, resourceName));
+            $(element).attr(attr, relativePath);
 
             tasks.add({
               title: `Downloading ${resourceUrl.href}`,
@@ -112,12 +116,17 @@ const downloadPage = (pageUrl, outputDir = process.cwd()) => {
             });
           });
 
-          // Save the HTML file also in the resources folder.
-          const htmlInResourcesPath = path.join(resourcesPath, htmlFileName);
-          return fs.writeFile(htmlInResourcesPath, pretty($.html(), {ocd: true}))
-            .then(() => tasks.run().then(() => $));
+          const formattedHtml = pretty($.html(), { 
+            ocd: true,
+            indent_size: 2,
+            indent_inner_html: true,
+          });
+
+          return Promise.all([
+            fs.writeFile(htmlFilePath, formattedHtml),
+            tasks.run().catch(() => true)
+          ]).then(() => htmlFilePath);
         })
-        .then(($) => fs.writeFile(htmlFilePath, pretty($.html(), {ocd: true})).then(() => htmlFilePath))
         .then((htmlFilePath) => {
           console.log(`\nPage was successfully downloaded into '${chalk.bold.redBright(htmlFilePath)}'`);
           return htmlFilePath;
