@@ -1,3 +1,5 @@
+/* eslint-disable no-undef */
+
 import fs from 'fs-extra';
 import path from 'path';
 import nock from 'nock';
