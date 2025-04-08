@@ -1,7 +1,6 @@
 import fs from 'fs-extra';
 import path from 'path';
 import nock from 'nock';
-import { test, expect, beforeAll, afterAll } from '@jest/globals';
 import downloadPage, { generateFileName } from '../utilities/downLoadPage.js';
 
 const tempDir = path.join(process.cwd(), 'temp_test_dir');
@@ -55,14 +54,14 @@ test('downloads the page and updates image src correctly', async () => {
 
   // Expected HTML file path.
   const expectedHtmlFile = path.join(tempDir, `${generateFileName(testUrl)}.html`);
-  
+
   // Check if the HTML file exists.
   const htmlExists = await fs.pathExists(expectedHtmlFile);
   expect(htmlExists).toBe(true);
 
   // Read the saved HTML.
   const savedHtml = await fs.readFile(expectedHtmlFile, 'utf-8');
-  
+
   // Expected updated image src:
   const expectedImgName = `${generateFileName('https://ru.hexlet.io/assets/professions/nodejs.png')}${path.extname('https://ru.hexlet.io/assets/professions/nodejs.png')}`;
   const expectedImgSrc = path.join(`${generateFileName(testUrl)}_files`, expectedImgName);
@@ -74,7 +73,7 @@ test('downloads image and saves it in the resources folder', async () => {
 
   // Expected resource folder.
   const resourcesFolder = path.join(tempDir, `${generateFileName(testUrl)}_files`);
-  
+
   // Expected image file name (as computed in the module).
   const expectedImgName = `${generateFileName('https://ru.hexlet.io/assets/professions/nodejs.png')}${path.extname('https://ru.hexlet.io/assets/professions/nodejs.png')}`;
   const expectedImgPath = path.join(resourcesFolder, expectedImgName);
